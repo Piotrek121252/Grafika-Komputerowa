@@ -9,8 +9,7 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 
 
-N = 2.0 / math.sqrt(3.0) # czynnik skalujący
-A = 1.0 # zwykła skala
+A = 1.0 # Czynnik skalujący
 
 
 # def load_texture(filename):
@@ -204,11 +203,15 @@ def light():
 
 
 def main():
-    num_of_levels = int(input("Podaj ilość poziomów Piramidy Sierpińskiego: "))
+    try:
+        num_of_levels = int(input("Podaj ilość poziomów Piramidy Sierpińskiego: "))
+        if num_of_levels < 0:
+            print("Podana wartość jest mniejsza od 0.")
+            raise ValueError
 
-    if num_of_levels < 0:
+    except ValueError:
         num_of_levels = 3
-        print("Podana wartość nie spełnia wymagań, przyjmujemy poziom piramidy jako: 3.")
+        print("Przyjmujemy poziom piramidy równy: 3.")
 
     # texture_filemane = "Textures/wall_texture_example.jpg"
     # texture_id = load_texture(texture_filemane)
@@ -228,9 +231,11 @@ def main():
     glEnable(GL_DEPTH_TEST)
 
     gluPerspective(45, (display[0] / display[1]), 0.1, 50.0)
-    glTranslatef(0.0, 0.0, -5)
+    cameraPos = [0.0, -A/2.0, A*(-4.0)]
 
-    cameraPos = [0.0, 0.0, -5.0]
+    glTranslatef(*cameraPos)
+
+
     angle = 0.0
 
     while True:
