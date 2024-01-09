@@ -1,7 +1,7 @@
 import pygame
 import math
-# import numpy
-# from PIL import Image
+
+from PIL import Image
 
 from pygame.locals import *
 
@@ -10,87 +10,6 @@ from OpenGL.GLU import *
 
 
 A = 1.0 # Czynnik skalujący
-
-
-# def load_texture(filename):
-#     img = Image.open(filename)
-#     img= img.convert("RGB")
-#
-#     img_data = img.tobytes()
-#     img_width, img_height = img.size
-#
-#     texture_id = glGenTextures(1)
-#     glBindTexture(GL_TEXTURE_2D, texture_id)
-#
-#     glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
-#     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-#     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
-#     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
-#     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-#     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL)
-#
-#     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_width, img.height, 0, GL_RGB, GL_UNSIGNED_BYTE, img_data)
-#
-#     return texture_id
-#
-#
-# def draw_tetrahedron_with_texture(v1, v2, v3, v4, texture_id):
-#     glEnable(GL_TEXTURE_2D)
-#     glBindTexture(GL_TEXTURE_2D, texture_id)
-#
-#     glBegin(GL_TRIANGLES)
-#
-#     glTexCoord2f(0.0, 0.0)
-#     glVertex3f(*v1)
-#
-#     glTexCoord2f(1.0, 0.0)
-#     glVertex3f(*v2)
-#
-#     glTexCoord2f(0.5, 1.0)
-#     glVertex3f(*v3)
-#
-#     glEnd()
-#
-#     glBegin(GL_TRIANGLES)
-#
-#     glTexCoord2f(0.0, 0.0)
-#     glVertex3f(*v1)
-#
-#     glTexCoord2f(0.5, 1.0)
-#     glVertex3f(*v3)
-#
-#     glTexCoord2f(1.0, 0.0)
-#     glVertex3f(*v4)
-#
-#     glEnd()
-#
-#     glBegin(GL_TRIANGLES)
-#
-#     glTexCoord2f(1.0, 0.0)
-#     glVertex3f(*v2)
-#
-#     glTexCoord2f(0.5, 1.0)
-#     glVertex3f(*v3)
-#
-#     glTexCoord2f(0.0, 0.0)
-#     glVertex3f(*v4)
-#
-#     glEnd()
-#
-#     glBegin(GL_TRIANGLES)
-#
-#     glTexCoord2f(0.0, 0.0)
-#     glVertex3f(*v1)
-#
-#     glTexCoord2f(1.0, 0.0)
-#     glVertex3f(*v2)
-#
-#     glTexCoord2f(0.0, 0.0)
-#     glVertex3f(*v4)
-#
-#     glEnd()
-#
-#     glDisable(GL_TEXTURE_2D)
 
 def draw_axes():
     glBegin(GL_LINES)
@@ -123,12 +42,15 @@ def draw_tetrahedron(v1, v2, v3, v4):
 def draw_triangle(point_a, point_b, point_c):
     glBegin(GL_TRIANGLES)
 
+    glTexCoord2f(0.0, 0.0)
     glColor3f(1, 1, 1)
     glVertex3f(*point_a)
 
+    glTexCoord2f(1.0, 0.0)
     glColor3f(0.75, 0.75, 0.75)
     glVertex3f(*point_b)
 
+    glTexCoord2f(0.5, 1.0)
     glColor3f(0.5, 0.5, 0.5)
     glVertex3f(*point_c)
 
@@ -215,20 +137,34 @@ def main():
 
     # texture_filemane = "Textures/wall_texture_example.jpg"
     # texture_id = load_texture(texture_filemane)
-    #
-    # texture_enabled = False
+    # # texture_enabled = False
 
     pygame.init()
     display = (800, 600)
     pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
 
-    active = True
+    rotation_active = True
 
     glEnable(GL_LIGHTING)
     glEnable(GL_LIGHT0)
     glEnable(GL_COLOR_MATERIAL)
 
     glEnable(GL_DEPTH_TEST)
+
+    #sekcja związana z inicjalizacją tekstur
+    texture_enabled = True
+    glEnable(GL_TEXTURE_2D)
+    #glEnable(GL_CULL_FACE)
+    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+    image = Image.open("tekstura.tga")
+
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, 3, image.size[0], image.size[1], 0,
+        GL_RGB, GL_UNSIGNED_BYTE, image.tobytes("raw", "RGB", 0, -1)
+    )
 
     gluPerspective(45, (display[0] / display[1]), 0.1, 50.0)
     cameraPos = [0.0, -A/2.0, A*(-4.0)]
@@ -245,28 +181,28 @@ def main():
                 quit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_t:
+                    if texture_enabled:
+                        glDisable(GL_TEXTURE_2D)
+                    else:
+                        glEnable(GL_TEXTURE_2D)
+                        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
                     texture_enabled = not texture_enabled
                 if event.key == pygame.K_UP:
-                    # glTranslate(0.0, -0.2, 0)
                     cameraPos[1] -= 0.2
                 if event.key == pygame.K_DOWN:
-                    # glTranslate(0.0, 0.2, 0)
                     cameraPos[1] += 0.2
                 if event.key == pygame.K_RIGHT:
-                    # glTranslate(-0.2, 0, 0)
                     cameraPos[0] -= 0.2
                 if event.key == pygame.K_LEFT:
-                    # glTranslate(0.2, 0, 0)
                     cameraPos[0] += 0.2
                 if event.key == pygame.K_w:
-                    # glTranslate(0, 0, 0.2)
                     cameraPos[2] += 0.2
                 if event.key == pygame.K_s:
-                    # glTranslate(0, 0, -0.2)
                     cameraPos[2] -= 0.2
                 if event.key == pygame.K_SPACE:
-                    #glRotatef(-90, 0, 0, -1)
-                    active = not active
+                    rotation_active = not rotation_active
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
@@ -275,13 +211,14 @@ def main():
         gluPerspective(45, (display[0] / display[1]), 0.1, 50.0)
         glTranslatef(*cameraPos)
 
-        if active:
+        if rotation_active:
             angle += 0.5
             angle = angle%360
 
         glRotatef(angle, 0.0, 1.0, 0.0)
 
         draw_pyramid(points[0], points[1], points[2], points[3], num_of_levels)
+        # draw_tetrahedron_with_texture(points[0], points[1], points[2], points[3], texture_id)
         draw_axes()
         light()
 
@@ -289,4 +226,5 @@ def main():
         pygame.time.wait(10)
 
 
-main()
+if __name__ == '__main__':
+    main()
