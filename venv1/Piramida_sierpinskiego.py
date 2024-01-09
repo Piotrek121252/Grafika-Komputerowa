@@ -35,8 +35,8 @@ def draw_axes():
 def draw_tetrahedron(v1, v2, v3, v4):
     draw_triangle(v1, v2, v3)
     draw_triangle(v1, v3, v4)
-    draw_triangle(v2, v3, v4)
-    draw_triangle(v1, v2, v4)
+    draw_triangle(v3, v2, v4)
+    draw_triangle(v2, v1, v4)
 
 
 def draw_triangle(point_a, point_b, point_c):
@@ -154,12 +154,12 @@ def main():
     #sekcja związana z inicjalizacją tekstur
     texture_enabled = True
     glEnable(GL_TEXTURE_2D)
-    #glEnable(GL_CULL_FACE)
+    glEnable(GL_CULL_FACE)
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
-    image = Image.open("tekstura.tga")
+    image = Image.open("tekstury/M1_t.tga")
 
     glTexImage2D(
         GL_TEXTURE_2D, 0, 3, image.size[0], image.size[1], 0,
@@ -185,6 +185,7 @@ def main():
                         glDisable(GL_TEXTURE_2D)
                     else:
                         glEnable(GL_TEXTURE_2D)
+                        glEnable(GL_CULL_FACE)
                         glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
@@ -218,9 +219,8 @@ def main():
         glRotatef(angle, 0.0, 1.0, 0.0)
 
         draw_pyramid(points[0], points[1], points[2], points[3], num_of_levels)
-        # draw_tetrahedron_with_texture(points[0], points[1], points[2], points[3], texture_id)
         draw_axes()
-        light()
+        #light()
 
         pygame.display.flip()
         pygame.time.wait(10)
