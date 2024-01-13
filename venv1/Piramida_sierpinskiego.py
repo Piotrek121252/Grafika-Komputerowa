@@ -10,6 +10,8 @@ from OpenGL.GLU import *
 
 
 A = 2.0 # Czynnik skalujący
+camera_step = 0.2
+light_step = 0.2
 
 def draw_axes():
     glBegin(GL_LINES)
@@ -31,11 +33,21 @@ def draw_axes():
 
     glEnd()
 
+def draw_marker(position):
+    glColor3f(1.0, 1.0, 0.0)  # Żółty kolor dla sfery
+
+    glPushMatrix()
+    glTranslatef(position[0], position[1], position[2])
+    quadratic = gluNewQuadric()
+    gluSphere(quadratic, 0.05, 10, 10)
+    glPopMatrix()
+
 def draw_ground(texture_enabled):
 
-    glDisable(GL_LIGHTING)
     if texture_enabled:
         glDisable(GL_TEXTURE_2D)
+    glDisable(GL_CULL_FACE)
+    glDisable(GL_LIGHTING)
 
     # Kolor podłoża
     glColor3f(0.1843137, 0.30859375, 0.30859375)
@@ -47,9 +59,10 @@ def draw_ground(texture_enabled):
     glVertex3f(20.0 * A, -0.01, 20.0 * A)
     glEnd()
 
-    glEnable(GL_LIGHTING)
     if texture_enabled:
         glEnable(GL_TEXTURE_2D)
+    glEnable(GL_CULL_FACE)
+    glEnable(GL_LIGHTING)
 
 def draw_tetrahedron(v1, v2, v3, v4):
     draw_triangle(v1, v2, v3)
@@ -124,24 +137,34 @@ def draw_pyramid(v1, v2, v3, v4, level):
 
 # punkty dobrane tak aby piramida stała na płaszczyźnie xz
 points = [
-              [-A, 0.0, -A/math.sqrt(3.0)],
-              [A, 0.0, -A/math.sqrt(3.0)],
-              [0.0, 0.0,A * math.sqrt(3.0) - A/math.sqrt(3.0)],
-              [0.0, 2*A*(math.sqrt(2.0/3.0)), 0.0]
+    [-A, 0.0, -A/math.sqrt(3.0)],
+    [A, 0.0, -A/math.sqrt(3.0)],
+    [0.0, 0.0,A * math.sqrt(3.0) - A/math.sqrt(3.0)],
+    [0.0, 2*A*(math.sqrt(2.0/3.0)), 0.0]
         ]
+# kolory dla punktowego światła
+preset_colors = [
+    (1.0, 1.0, 1.0, 1.0),  # White
+    (1.0, 0.0, 0.0, 1.0),  # Red
+    (0.0, 1.0, 0.0, 1.0),  # Green
+    (1.0, 0.0, 1.0, 1.0),  # Purple
+]
 
-def light():
-    glLight(GL_LIGHT0, GL_POSITION,  (5, 5, 5, 0)) # źródło światła left, top, front
+def light(point_light_position, point_light_color):
+    # źródło światła kierunkowego yellow
+    glLight(GL_LIGHT0, GL_POSITION,  (0.0, 2.0*A, A, 0)) # źródło światła left, top, front
+    glLightfv(GL_LIGHT0, GL_AMBIENT, (0.8, 0.8, 0.0, 1.0)) # Ustawienie koloru światła otoczenia
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, (1.0, 1.0, 1.0, 1.0)) # Ustawienie koloru światła rozproszonego
+    glLightfv(GL_LIGHT0, GL_SPECULAR, (1.0, 1.0, 0.0, 1.0)) # Ustawienie koloru światła wypukłego
 
-    # Ustawienie koloru światła otoczenia
-    glLightfv(GL_LIGHT0, GL_AMBIENT, (0.0, 1.0, 0.0, 1.0))
+    glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.05)
 
-    # Ustawienie koloru światła rozproszonego
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, (0.0, 0.0, 1.0, 1.0))
+    # źródło światła punktowego white
+    glLight(GL_LIGHT1, GL_POSITION, (*point_light_position, 1))  # źródło światła left, top, front
+    glLightfv(GL_LIGHT1, GL_DIFFUSE, (point_light_color))  # Ustawienie koloru światła rozproszonego
+    glLightfv(GL_LIGHT1, GL_SPECULAR, (point_light_color))  # Ustawienie koloru światła wypukłego
 
-    # Ustawienie koloru światła wypukłego
-    glLightfv(GL_LIGHT0, GL_SPECULAR, (1.0, 0.0, 0.0, 1.0))
-    glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE )
+    glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE)
 
 
 def main():
@@ -158,12 +181,14 @@ def main():
     display = (1280, 720)
     pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
     pygame.display.set_caption("Piramida Sierpinskiego")
-
-    rotation_active = True
-
+    # uruchamiamy oświetlenie
     glEnable(GL_LIGHTING)
     glEnable(GL_LIGHT0)
+    glEnable(GL_LIGHT1)
     glEnable(GL_COLOR_MATERIAL)
+
+    point_light_position = [0.0, 2.5 * A, A + 0.5]
+    current_color_idx = 0
 
     glEnable(GL_DEPTH_TEST)
 
@@ -188,7 +213,7 @@ def main():
 
     glTranslatef(*cameraPos)
 
-
+    rotation_active = True
     angle = 0.0
 
     while True:
@@ -197,7 +222,9 @@ def main():
                 pygame.quit()
                 quit()
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_t:
+                if event.key == pygame.K_c:
+                    current_color_idx = (current_color_idx + 1) % len(preset_colors)
+                elif event.key == pygame.K_t:
                     if texture_enabled:
                         glDisable(GL_TEXTURE_2D)
                     else:
@@ -206,20 +233,28 @@ def main():
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
                     texture_enabled = not texture_enabled
-                if event.key == pygame.K_UP:
-                    cameraPos[1] -= 0.2
-                if event.key == pygame.K_DOWN:
-                    cameraPos[1] += 0.2
-                if event.key == pygame.K_RIGHT:
-                    cameraPos[0] -= 0.2
-                if event.key == pygame.K_LEFT:
-                    cameraPos[0] += 0.2
-                if event.key == pygame.K_SPACE:
+                elif event.key == pygame.K_w:
+                    cameraPos[1] -= camera_step
+                elif event.key == pygame.K_s:
+                    cameraPos[1] += camera_step
+                elif event.key == pygame.K_d:
+                    cameraPos[0] -= camera_step
+                elif event.key == pygame.K_a:
+                    cameraPos[0] += camera_step
+                elif event.key == pygame.K_SPACE:
                     rotation_active = not rotation_active
+                elif event.key == pygame.K_UP:
+                    point_light_position[1] += light_step
+                elif event.key == pygame.K_DOWN:
+                    point_light_position[1] -= light_step
+                elif event.key == pygame.K_RIGHT:
+                    point_light_position[0] += light_step
+                elif event.key == pygame.K_LEFT:
+                    point_light_position[0] -= light_step
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 4: # scroll up
                     cameraPos[2] += 0.2
-                if event.button == 5: # scroll down
+                elif event.button == 5: # scroll down
                     cameraPos[2] -= 0.2
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -238,10 +273,15 @@ def main():
         draw_pyramid(points[0], points[1], points[2], points[3], num_of_levels)
         draw_axes()
         draw_ground(texture_enabled)
-        light()
+
+        light(point_light_position, preset_colors[current_color_idx])
+         # rysujemy sferę reprezentującą pozycję światła punktowego
+        # draw_marker(point_light_position)
+
 
         pygame.display.flip()
         pygame.time.wait(10)
+
 
 
 if __name__ == '__main__':
