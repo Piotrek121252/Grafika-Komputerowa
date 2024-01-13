@@ -9,7 +9,7 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 
 
-A = 1.0 # Czynnik skalujący
+A = 2.0 # Czynnik skalujący
 
 def draw_axes():
     glBegin(GL_LINES)
@@ -31,6 +31,25 @@ def draw_axes():
 
     glEnd()
 
+def draw_ground(texture_enabled):
+
+    glDisable(GL_LIGHTING)
+    if texture_enabled:
+        glDisable(GL_TEXTURE_2D)
+
+    # Kolor podłoża
+    glColor3f(0.1843137, 0.30859375, 0.30859375)
+
+    glBegin(GL_QUADS)
+    glVertex3f(20.0 * A, -0.01, -20.0 * A)
+    glVertex3f(-20.0 * A, -0.01, -20.0 * A)
+    glVertex3f(-20.0 * A, -0.01, 20.0 * A)
+    glVertex3f(20.0 * A, -0.01, 20.0 * A)
+    glEnd()
+
+    glEnable(GL_LIGHTING)
+    if texture_enabled:
+        glEnable(GL_TEXTURE_2D)
 
 def draw_tetrahedron(v1, v2, v3, v4):
     draw_triangle(v1, v2, v3)
@@ -103,6 +122,7 @@ def draw_pyramid(v1, v2, v3, v4, level):
         draw_pyramid(v31, v23, v3, v34, level - 1)
         draw_pyramid(v14, v24, v34, v4, level - 1)
 
+# punkty dobrane tak aby piramida stała na płaszczyźnie xz
 points = [
               [-A, 0.0, -A/math.sqrt(3.0)],
               [A, 0.0, -A/math.sqrt(3.0)],
@@ -114,13 +134,13 @@ def light():
     glLight(GL_LIGHT0, GL_POSITION,  (5, 5, 5, 0)) # źródło światła left, top, front
 
     # Ustawienie koloru światła otoczenia
-    glLightfv(GL_LIGHT0, GL_AMBIENT, (1.0, 0.0, 0.0, 1.0))
+    glLightfv(GL_LIGHT0, GL_AMBIENT, (0.0, 1.0, 0.0, 1.0))
 
     # Ustawienie koloru światła rozproszonego
     glLightfv(GL_LIGHT0, GL_DIFFUSE, (0.0, 0.0, 1.0, 1.0))
 
     # Ustawienie koloru światła wypukłego
-    glLightfv(GL_LIGHT0, GL_SPECULAR, (0.0, 1.0, 0.0, 1.0))
+    glLightfv(GL_LIGHT0, GL_SPECULAR, (1.0, 0.0, 0.0, 1.0))
     glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE )
 
 
@@ -130,18 +150,14 @@ def main():
         if num_of_levels < 0:
             print("Podana wartość jest mniejsza od 0.")
             raise ValueError
-
     except ValueError:
         num_of_levels = 3
         print("Przyjmujemy poziom piramidy równy: 3.")
 
-    # texture_filemane = "Textures/wall_texture_example.jpg"
-    # texture_id = load_texture(texture_filemane)
-    # # texture_enabled = False
-
     pygame.init()
-    display = (800, 600)
+    display = (1280, 720)
     pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
+    pygame.display.set_caption("Piramida Sierpinskiego")
 
     rotation_active = True
 
@@ -151,7 +167,7 @@ def main():
 
     glEnable(GL_DEPTH_TEST)
 
-    #sekcja związana z inicjalizacją tekstur
+    # sekcja związana z inicjalizacją tekstur
     texture_enabled = True
     glEnable(GL_TEXTURE_2D)
     glEnable(GL_CULL_FACE)
@@ -166,6 +182,7 @@ def main():
         GL_RGB, GL_UNSIGNED_BYTE, image.tobytes("raw", "RGB", 0, -1)
     )
 
+    # pozycja kamery, wraz ze wzrostem A odsuwamy kamerę, żeby nie była w modelu
     gluPerspective(45, (display[0] / display[1]), 0.1, 50.0)
     cameraPos = [0.0, -A/2.0, A*(-4.0)]
 
@@ -185,7 +202,6 @@ def main():
                         glDisable(GL_TEXTURE_2D)
                     else:
                         glEnable(GL_TEXTURE_2D)
-                        glEnable(GL_CULL_FACE)
                         glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
@@ -198,12 +214,13 @@ def main():
                     cameraPos[0] -= 0.2
                 if event.key == pygame.K_LEFT:
                     cameraPos[0] += 0.2
-                if event.key == pygame.K_w:
-                    cameraPos[2] += 0.2
-                if event.key == pygame.K_s:
-                    cameraPos[2] -= 0.2
                 if event.key == pygame.K_SPACE:
                     rotation_active = not rotation_active
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 4: # scroll up
+                    cameraPos[2] += 0.2
+                if event.button == 5: # scroll down
+                    cameraPos[2] -= 0.2
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
@@ -220,7 +237,8 @@ def main():
 
         draw_pyramid(points[0], points[1], points[2], points[3], num_of_levels)
         draw_axes()
-        #light()
+        draw_ground(texture_enabled)
+        light()
 
         pygame.display.flip()
         pygame.time.wait(10)
