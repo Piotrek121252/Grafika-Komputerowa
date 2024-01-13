@@ -34,13 +34,22 @@ def draw_axes():
     glEnd()
 
 def draw_marker(position):
-    glColor3f(1.0, 1.0, 0.0)  # Żółty kolor dla sfery
+    glColor3f(1.0, 1.0, 0.0)  # Żółty kolor dla markera
 
-    glPushMatrix()
-    glTranslatef(position[0], position[1], position[2])
-    quadratic = gluNewQuadric()
-    gluSphere(quadratic, 0.05, 10, 10)
-    glPopMatrix()
+    glBegin(GL_LINES)
+    glVertex3f(position[0], position[1], position[2])
+    glVertex3f(position[0], position[1], position[2] + 0.2)
+    glEnd()
+
+    glDisable(GL_CULL_FACE)
+    glBegin(GL_TRIANGLES)
+    glVertex3f(position[0], position[1] + 0.05, position[2] + 0.1)
+    glVertex3f(position[0], position[1], position[2])
+    glVertex3f(position[0], position[1] - 0.05, position[2] + 0.1)
+    glEnd()
+    glEnable(GL_CULL_FACE)
+
+
 
 def draw_ground(texture_enabled):
 
@@ -144,23 +153,22 @@ points = [
         ]
 # kolory dla punktowego światła
 preset_colors = [
-    (1.0, 1.0, 1.0, 1.0),  # White
+    (1.0, 1.0, 0.0, 1.0),  # Yellow
     (1.0, 0.0, 0.0, 1.0),  # Red
     (0.0, 1.0, 0.0, 1.0),  # Green
     (1.0, 0.0, 1.0, 1.0),  # Purple
 ]
 
 def light(point_light_position, point_light_color):
-    # źródło światła kierunkowego yellow
-    glLight(GL_LIGHT0, GL_POSITION,  (0.0, 2.0*A, A, 0)) # źródło światła left, top, front
-    glLightfv(GL_LIGHT0, GL_AMBIENT, (0.8, 0.8, 0.0, 1.0)) # Ustawienie koloru światła otoczenia
+    # źródło światła kierunkowego White
+    glLight(GL_LIGHT0, GL_POSITION,  (0.0, 5.0*A, A, 0)) # źródło światła left, top, front
+    glLightfv(GL_LIGHT0, GL_AMBIENT, (0.6, 0.6, 0.6, 1.0)) # Ustawienie koloru światła otoczenia
     glLightfv(GL_LIGHT0, GL_DIFFUSE, (1.0, 1.0, 1.0, 1.0)) # Ustawienie koloru światła rozproszonego
-    glLightfv(GL_LIGHT0, GL_SPECULAR, (1.0, 1.0, 0.0, 1.0)) # Ustawienie koloru światła wypukłego
+    glLightfv(GL_LIGHT0, GL_SPECULAR, (1.0, 1.0, 1.0, 1.0)) # Ustawienie koloru światła wypukłego
 
-    glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.05)
-
-    # źródło światła punktowego white
+    # źródło światła punktowego
     glLight(GL_LIGHT1, GL_POSITION, (*point_light_position, 1))  # źródło światła left, top, front
+    glLightfv(GL_LIGHT1, GL_AMBIENT, (point_light_color[0] * 0.01, point_light_color[1] * 0.01, point_light_color[2] * 0.01))  # Ustawienie koloru światła otoczenia
     glLightfv(GL_LIGHT1, GL_DIFFUSE, (point_light_color))  # Ustawienie koloru światła rozproszonego
     glLightfv(GL_LIGHT1, GL_SPECULAR, (point_light_color))  # Ustawienie koloru światła wypukłego
 
@@ -187,7 +195,7 @@ def main():
     glEnable(GL_LIGHT1)
     glEnable(GL_COLOR_MATERIAL)
 
-    point_light_position = [0.0, 2.5 * A, A + 0.5]
+    point_light_position = [0.0, 2.5 * A, A - 0.5]
     current_color_idx = 0
 
     glEnable(GL_DEPTH_TEST)
@@ -276,7 +284,7 @@ def main():
 
         light(point_light_position, preset_colors[current_color_idx])
          # rysujemy sferę reprezentującą pozycję światła punktowego
-        # draw_marker(point_light_position)
+        draw_marker(point_light_position)
 
 
         pygame.display.flip()
