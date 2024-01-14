@@ -172,7 +172,7 @@ def light(point_light_position, point_light_color):
     glLightfv(GL_LIGHT1, GL_DIFFUSE, (point_light_color))  # Ustawienie koloru światła rozproszonego
     glLightfv(GL_LIGHT1, GL_SPECULAR, (point_light_color))  # Ustawienie koloru światła wypukłego
 
-    glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, 0.9);
+    glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, 0.9);
 
     glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE)
 
