@@ -168,9 +168,11 @@ def light(point_light_position, point_light_color):
 
     # źródło światła punktowego
     glLight(GL_LIGHT1, GL_POSITION, (*point_light_position, 1))  # źródło światła left, top, front
-    glLightfv(GL_LIGHT1, GL_AMBIENT, (point_light_color[0] * 0.01, point_light_color[1] * 0.01, point_light_color[2] * 0.01))  # Ustawienie koloru światła otoczenia
+    glLightfv(GL_LIGHT1, GL_AMBIENT, (point_light_color[0] * 0.005, point_light_color[1] * 0.005, point_light_color[2] * 0.005))  # Ustawienie koloru światła otoczenia
     glLightfv(GL_LIGHT1, GL_DIFFUSE, (point_light_color))  # Ustawienie koloru światła rozproszonego
     glLightfv(GL_LIGHT1, GL_SPECULAR, (point_light_color))  # Ustawienie koloru światła wypukłego
+
+    glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, 0.9);
 
     glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE)
 
@@ -259,6 +261,10 @@ def main():
                     point_light_position[0] += light_step
                 elif event.key == pygame.K_LEFT:
                     point_light_position[0] -= light_step
+                elif event.key == pygame.K_n:
+                    point_light_position[2] += light_step
+                elif event.key == pygame.K_m:
+                    point_light_position[2] -= light_step
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 4: # scroll up
                     cameraPos[2] += 0.2
